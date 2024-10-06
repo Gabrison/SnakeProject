@@ -1,3 +1,4 @@
+// JavaScript
 const snakeCanvas = document.getElementById('snakeCanvas');
 snakeCanvas.style.border = "2px solid black"; // Adjust border width and color as needed
 const ctx = snakeCanvas.getContext("2d");
@@ -15,7 +16,7 @@ let snake = [
 ];
 
 let dx = 10; // Initial movement direction
-let dy = 0;  // y axile moving direction
+let dy = 0;  // y axis moving direction
 let food_x, food_y;
 let score = 0;
 
@@ -48,18 +49,15 @@ function clearCanvas() {
 
 function main() {
   if (has_game_ended()) {
-    // Game over message
-    ctx.fillStyle = 'red';
-    ctx.font = '30px Arial';
-    ctx.fillText('Game Over', 150, 200);
-    // Restart game button
-    ctx.fillStyle = 'green';
-    ctx.fillRect(150, 250, 100, 50);s
-    ctx.fillStyle = 'white';
-    ctx.font = '20px Arial';
-    ctx.fillText('Restart', 165, 285);
-    // Stop the game loop
-    return;
+    alert('Game Over');
+
+    // Submit the score to the backend
+    submitScore();
+
+    // Fetch and display the leaderboard in the DOM
+    fetchHighScores();
+
+    return; // Stop the game loop
   }
   
   setTimeout(function() {
@@ -101,14 +99,14 @@ function change_direction(event) {
 }
 
 document.addEventListener("keydown", change_direction);
-//עובר על ארבעת הערכים של הנ
+
 function has_game_ended() {
   for (let i = 4; i < snake.length; i++) {
     if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
       return true; // Snake collided with itself
     }
   }
-   //walls logic
+   // walls logic
   const hitLeftWall = snake[0].x < 0;
   const hitRightWall = snake[0].x > snakeCanvas.width - 10;
   const hitTopWall = snake[0].y < 0;
@@ -129,6 +127,49 @@ function drawFood() {
   ctx.strokeStyle = 'darkgreen';
   ctx.fillRect(food_x, food_y, 10, 10);
   ctx.strokeRect(food_x, food_y, 10, 10);
+}
+
+// Function to submit score to the backend
+function submitScore() {
+  const playerName = prompt("Game over! Enter your name for the leaderboard:");
+
+  axios.post('http://localhost:3000/submit-score', {
+    name: playerName,
+    score: score
+  })
+  .then(() => {
+    console.log('Score submitted');
+  })
+  .catch(err => {
+    console.error('Error submitting score', err);
+  });
+}
+
+// Function to display high scores in the DOM
+function fetchHighScores() {
+  axios.get('http://localhost:3000/high-scores')
+    .then(response => {
+      const highScores = response.data;
+      
+      // Get the leaderboard div
+      const leaderboardDiv = document.getElementById('leaderboard');
+      
+      // Clear the existing content
+      leaderboardDiv.innerHTML = '';
+
+      // Create the leaderboard HTML
+      let leaderboardHTML = '<h3>Leaderboard</h3><ul>';
+      highScores.forEach((score, index) => {
+        leaderboardHTML += `<li>${index + 1}. ${score.name}: ${score.score}</li>`;
+      });
+      leaderboardHTML += '</ul>';
+
+      // Add the new leaderboard content
+      leaderboardDiv.innerHTML = leaderboardHTML;
+    })
+    .catch(err => {
+      console.error('Error fetching high scores', err);
+    });
 }
 
 // Function to restart the game
@@ -162,4 +203,3 @@ snakeCanvas.addEventListener('click', function(event) {
     restartGame();
   }
 });
-
